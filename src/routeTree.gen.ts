@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReviewRouteImport } from './routes/review'
+import { Route as LogRouteImport } from './routes/log'
 import { Route as IdeasRouteImport } from './routes/ideas'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LogIndexRouteImport } from './routes/log.index'
 import { Route as LogSlugRouteImport } from './routes/log.$slug'
 
 const SettingsRoute = SettingsRouteImport.update({
@@ -25,6 +27,11 @@ const ReviewRoute = ReviewRouteImport.update({
   path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LogRoute = LogRouteImport.update({
+  id: '/log',
+  path: '/log',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IdeasRoute = IdeasRouteImport.update({
   id: '/ideas',
   path: '/ideas',
@@ -35,18 +42,25 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LogIndexRoute = LogIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LogRoute,
+} as any)
 const LogSlugRoute = LogSlugRouteImport.update({
-  id: '/log/$slug',
-  path: '/log/$slug',
-  getParentRoute: () => rootRouteImport,
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => LogRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ideas': typeof IdeasRoute
+  '/log': typeof LogRouteWithChildren
   '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/log/$slug': typeof LogSlugRoute
+  '/log/': typeof LogIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,29 +68,47 @@ export interface FileRoutesByTo {
   '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/log/$slug': typeof LogSlugRoute
+  '/log': typeof LogIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/ideas': typeof IdeasRoute
+  '/log': typeof LogRouteWithChildren
   '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/log/$slug': typeof LogSlugRoute
+  '/log/': typeof LogIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ideas' | '/review' | '/settings' | '/log/$slug'
+  fullPaths:
+    | '/'
+    | '/ideas'
+    | '/log'
+    | '/review'
+    | '/settings'
+    | '/log/$slug'
+    | '/log/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ideas' | '/review' | '/settings' | '/log/$slug'
-  id: '__root__' | '/' | '/ideas' | '/review' | '/settings' | '/log/$slug'
+  to: '/' | '/ideas' | '/review' | '/settings' | '/log/$slug' | '/log'
+  id:
+    | '__root__'
+    | '/'
+    | '/ideas'
+    | '/log'
+    | '/review'
+    | '/settings'
+    | '/log/$slug'
+    | '/log/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   IdeasRoute: typeof IdeasRoute
+  LogRoute: typeof LogRouteWithChildren
   ReviewRoute: typeof ReviewRoute
   SettingsRoute: typeof SettingsRoute
-  LogSlugRoute: typeof LogSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -95,6 +127,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/log': {
+      id: '/log'
+      path: '/log'
+      fullPath: '/log'
+      preLoaderRoute: typeof LogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ideas': {
       id: '/ideas'
       path: '/ideas'
@@ -109,22 +148,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/log/': {
+      id: '/log/'
+      path: '/'
+      fullPath: '/log/'
+      preLoaderRoute: typeof LogIndexRouteImport
+      parentRoute: typeof LogRoute
+    }
     '/log/$slug': {
       id: '/log/$slug'
-      path: '/log/$slug'
+      path: '/$slug'
       fullPath: '/log/$slug'
       preLoaderRoute: typeof LogSlugRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LogRoute
     }
   }
 }
 
+interface LogRouteChildren {
+  LogSlugRoute: typeof LogSlugRoute
+  LogIndexRoute: typeof LogIndexRoute
+}
+
+const LogRouteChildren: LogRouteChildren = {
+  LogSlugRoute: LogSlugRoute,
+  LogIndexRoute: LogIndexRoute,
+}
+
+const LogRouteWithChildren = LogRoute._addFileChildren(LogRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   IdeasRoute: IdeasRoute,
+  LogRoute: LogRouteWithChildren,
   ReviewRoute: ReviewRoute,
   SettingsRoute: SettingsRoute,
-  LogSlugRoute: LogSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -174,6 +174,7 @@ export const entries: DayEntry[] = [
       "Pill detection is now 98% accurate across all tested capsule sizes",
       "Printed a replacement gear set with tighter tolerances",
       "Updated the firmware state machine for the full dispense cycle",
+      "Went for a sunset run to celebrate — best runner's high in months",
     ],
     reflection: "This is the day I've been working toward for months. Seeing a pill go from hopper to dispense cup through the full automated cycle was incredible. There are still rough edges, but the core mechanism works. I actually teared up a little.",
     sections: [
@@ -184,8 +185,11 @@ export const entries: DayEntry[] = [
         content: [
           "The big breakthrough today. After three iterations on the belt tensioning system, I found the right spring constant that keeps consistent tension without binding. The key was using a pivoting idler pulley instead of a fixed adjustment slot.",
           "Reprinted the main drive gears with 0.1mm tighter tolerances. The previous set had enough backlash to cause position errors after 10+ dispense cycles. New gears are running smooth.",
+          "The full conveyor assembly is now reliable enough for demo purposes. Belt tracks straight, tension stays consistent, and the pill cups align perfectly with the dispense chute. I filmed a slow-motion video of a full cycle — it looks genuinely impressive.",
+          "One concern: the belt material (TPU) might degrade with repeated sanitization. Need to research medical-grade belt materials or look into a PTFE coating option. Added this to the materials research backlog.",
         ],
         taskRefs: ["PILL-280", "PILL-283"],
+        nextSteps: ["Source medical-grade conveyor belt material", "Run 1000-cycle endurance test", "Film demo video for investor deck"],
       },
       {
         category: "Software",
@@ -193,9 +197,12 @@ export const entries: DayEntry[] = [
         hours: 3.0,
         content: [
           "Rewrote the dispense state machine to handle the full cycle: IDLE → LOADING → SENSING → DISPENSING → CONFIRMING → IDLE. Each state has timeout guards and error recovery paths.",
-          "Added a confirmation LED sequence that flashes green on successful dispense and red on any error. Simple but effective user feedback.",
+          "Added a confirmation LED sequence that flashes green on successful dispense and red on any error. Simple but effective user feedback. Also added a buzzer pattern — two short beeps for success, one long for error.",
+          "The error recovery is the part I'm most proud of. If a pill gets jammed mid-dispense, the system reverses the belt, retries twice, and if it still fails, alerts the user with a specific error code. No silent failures.",
+          "Also implemented a basic logging system that writes dispense events to the SD card with timestamps. This will be invaluable for the beta testing phase — we can analyze dispense patterns and failure modes remotely.",
         ],
         taskRefs: ["PILL-284", "PILL-285"],
+        nextSteps: ["Add WiFi-based log upload to cloud dashboard", "Implement low-pill-count warning threshold"],
       },
       {
         category: "Hardware",
@@ -203,8 +210,21 @@ export const entries: DayEntry[] = [
         hours: 1.5,
         content: [
           "Ran 50 dispense cycles with various pill sizes. Detection accuracy: 98% for standard capsules, 95% for smaller tablets. The IR sensor occasionally has trouble with translucent gel caps — may need to add an additional optical sensor.",
+          "Documented every test run in a spreadsheet with photos. Created a test matrix covering 8 different pill form factors (capsule, tablet, gel cap, oval, round, scored, coated, extended-release). The round tablets had the highest success rate at 99.2%.",
+          "Identified two edge cases: very small pills (< 4mm diameter) sometimes slip through the detection zone, and oblong capsules occasionally orient sideways in the dispensing cup. Both are solvable with mechanical guides.",
         ],
         taskRefs: ["PILL-281", "PILL-282", "PILL-286"],
+        nextSteps: ["Design pill orientation guide for the dispensing cup", "Add secondary detection sensor for small pills"],
+      },
+      {
+        category: "Design",
+        title: "Industrial Design Exploration",
+        hours: 0.5,
+        content: [
+          "Spent some time sketching form factor ideas for the consumer version. The current prototype is all function, but the production unit needs to look like it belongs on a kitchen counter, not in a lab.",
+          "Inspiration board: Braun appliances, Muji electronics, the Ember mug. Clean lines, neutral colors, a single accent LED. No visible screws. The goal is something your grandma would feel comfortable using but that still impresses a tech-savvy caregiver.",
+        ],
+        taskRefs: [],
       },
     ],
     selfAssessment: {
