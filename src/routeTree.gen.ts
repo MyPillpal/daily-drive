@@ -13,6 +13,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as IdeasRouteImport } from './routes/ideas'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LogIndexRouteImport } from './routes/log.index'
 import { Route as LogSlugRouteImport } from './routes/log.$slug'
 
 const SettingsRoute = SettingsRouteImport.update({
@@ -35,6 +36,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LogIndexRoute = LogIndexRouteImport.update({
+  id: '/log/',
+  path: '/log/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LogSlugRoute = LogSlugRouteImport.update({
   id: '/log/$slug',
   path: '/log/$slug',
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/log/$slug': typeof LogSlugRoute
+  '/log/': typeof LogIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/log/$slug': typeof LogSlugRoute
+  '/log': typeof LogIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,21 @@ export interface FileRoutesById {
   '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/log/$slug': typeof LogSlugRoute
+  '/log/': typeof LogIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ideas' | '/review' | '/settings' | '/log/$slug'
+  fullPaths: '/' | '/ideas' | '/review' | '/settings' | '/log/$slug' | '/log/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ideas' | '/review' | '/settings' | '/log/$slug'
-  id: '__root__' | '/' | '/ideas' | '/review' | '/settings' | '/log/$slug'
+  to: '/' | '/ideas' | '/review' | '/settings' | '/log/$slug' | '/log'
+  id:
+    | '__root__'
+    | '/'
+    | '/ideas'
+    | '/review'
+    | '/settings'
+    | '/log/$slug'
+    | '/log/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +93,7 @@ export interface RootRouteChildren {
   ReviewRoute: typeof ReviewRoute
   SettingsRoute: typeof SettingsRoute
   LogSlugRoute: typeof LogSlugRoute
+  LogIndexRoute: typeof LogIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -109,6 +126,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/log/': {
+      id: '/log/'
+      path: '/log'
+      fullPath: '/log/'
+      preLoaderRoute: typeof LogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/log/$slug': {
       id: '/log/$slug'
       path: '/log/$slug'
@@ -125,6 +149,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReviewRoute: ReviewRoute,
   SettingsRoute: SettingsRoute,
   LogSlugRoute: LogSlugRoute,
+  LogIndexRoute: LogIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
