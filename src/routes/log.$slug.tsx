@@ -69,11 +69,21 @@ function GistCard({ entry }: { entry: (typeof entries)[0] }) {
       </button>
       <p className="text-sm text-muted-foreground mt-2">• {entry.gistBullets[0]}</p>
       {expanded && (
-        <div className="mt-2 space-y-1.5">
-          {entry.gistBullets.slice(1).map((b, i) => (
-            <p key={i} className="text-sm text-muted-foreground">• {b}</p>
-          ))}
-          {entry.gistBullets.length > 2 && <hr className="border-amber-200 my-3" />}
+        <div className="mt-2 space-y-1.5 animate-fade-in">
+          {entry.gistBullets.slice(1).map((b, i) => {
+            // Insert divider before the last bullet if it's a personal one
+            const isLastBullet = i === entry.gistBullets.length - 2;
+            const hasPersonalSection = entry.sections.some(s => s.category === "Personal");
+            return (
+              <div key={i}>
+                {isLastBullet && hasPersonalSection && (
+                  <hr className="border-amber-200 my-3" />
+                )}
+                <p className="text-sm text-muted-foreground">• {b}</p>
+              </div>
+            );
+          })}
+          <hr className="border-amber-200 my-3" />
           <p className="text-sm text-muted-foreground italic mt-3">{entry.reflection}</p>
         </div>
       )}
