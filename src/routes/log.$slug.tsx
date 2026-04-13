@@ -92,62 +92,56 @@ function GistCard({ post }: { post: Post }) {
 }
 
 function DevlogBody({ post }: { post: Post }) {
-  const categories = ["All", ...new Set(post.sections.map((s) => s.category))];
-  const [activeFilters, setActiveFilters] = useState<string[]>(["All"]);
+  const categories = [...new Set(post.sections.map((s) => s.category))];
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
   const toggleFilter = (cat: string) => {
-    if (cat === "All") {
-      setActiveFilters(["All"]);
-    } else {
-      const next = activeFilters.includes(cat)
-        ? activeFilters.filter((c) => c !== cat)
-        : [...activeFilters.filter((c) => c !== "All"), cat];
-      setActiveFilters(next.length === 0 ? ["All"] : next);
-    }
+    setActiveFilters((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
   };
 
-  const filteredSections = activeFilters.includes("All")
-    ? post.sections
-    : post.sections.filter((s) => activeFilters.includes(s.category));
+  const filteredSections =
+    activeFilters.length === 0
+      ? post.sections
+      : post.sections.filter((s) => activeFilters.includes(s.category));
 
   return (
     <div>
-      <div className="flex flex-wrap gap-2 mb-6">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => toggleFilter(cat)}
-            className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
-              activeFilters.includes(cat)
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
+      {categories.length > 1 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => toggleFilter(cat)}
+              className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
+                activeFilters.includes(cat)
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
 
       {filteredSections.map((section, i) => (
         <div key={i} className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-[11px] font-semibold tracking-wider uppercase text-muted-foreground">{section.category} — {section.title}</span>
+            <span className="text-[11px] font-semibold tracking-wider uppercase text-muted-foreground">
+              {section.category} — {section.title}
+            </span>
             <div className="flex-1 border-t border-border" />
             <span className="text-xs font-mono text-muted-foreground">{section.hours} hrs</span>
           </div>
-          {section.content.map((p, pi) => (
-            <p key={pi} className="text-sm text-foreground/85 leading-relaxed mb-3">{p}</p>
-          ))}
-          {section.taskRefs.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {section.taskRefs.map((ref) => (
-                <span key={ref} className="inline-flex items-center gap-1 text-[11px] font-mono font-medium px-2 py-0.5 rounded-md bg-blue-100 text-blue-600">
-                  <ExternalLink size={10} />
-                  {ref}
-                </span>
-              ))}
-            </div>
-          )}
+          <div className="space-y-2">
+            {section.content.map((p, pi) => (
+              <p key={pi} className="text-sm text-foreground/85 leading-relaxed">
+                {p.startsWith("•") || p.startsWith("-") ? p : `• ${p}`}
+              </p>
+            ))}
+          </div>
           {section.nextSteps && section.nextSteps.length > 0 && (
             <div className="bg-secondary/60 rounded-lg p-3 mt-3">
               <span className="text-[11px] font-semibold tracking-wider uppercase text-muted-foreground mb-1.5 block">Next steps</span>
@@ -160,7 +154,7 @@ function DevlogBody({ post }: { post: Post }) {
       ))}
 
       {filteredSections.length === 0 && (
-        <p className="text-sm text-muted-foreground italic">No detailed sections for this day yet.</p>
+        <p className="text-sm text-muted-foreground italic">No sections match the selected filters.</p>
       )}
     </div>
   );
