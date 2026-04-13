@@ -28,8 +28,11 @@ export function useTasks(postId?: string) {
 
       const { data, error: err } = await query;
 
+      if (cancelled) return;
+
       if (err) {
-        if (!cancelled) { setError(err.message); setLoading(false); }
+        setError(err.message);
+        setLoading(false);
         return;
       }
 
@@ -42,7 +45,8 @@ export function useTasks(postId?: string) {
         postId: row.post_id ?? null,
       }));
 
-      if (!cancelled) { setTasks(mapped); setLoading(false); }
+      setTasks(mapped);
+      setLoading(false);
     }
 
     fetch();
