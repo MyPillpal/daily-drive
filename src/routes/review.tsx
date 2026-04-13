@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { entries } from "@/data/mock-data";
+import { usePosts, updatePostReview } from "@/hooks/use-posts";
 import { Check } from "lucide-react";
 
 export const Route = createFileRoute("/review")({
@@ -8,19 +8,57 @@ export const Route = createFileRoute("/review")({
 });
 
 function ReviewPage() {
+  const { posts, loading } = usePosts();
   const [step, setStep] = useState(0);
   const [subStep, setSubStep] = useState(0);
   const [difficulty, setDifficulty] = useState(7);
   const [impact, setImpact] = useState(7);
-  const [accomplishment, setAccomplishment] = useState("Finished v2 skeleton model and fixed ESP32 display bug");
+  const [accomplishment, setAccomplishment] = useState("");
   const [blocker, setBlocker] = useState("");
   const [different, setDifferent] = useState("");
   const [priorities, setPriorities] = useState(["", "", ""]);
   const [heroPhoto, setHeroPhoto] = useState<number | null>(null);
+  const [publishing, setPublishing] = useState(false);
 
-  const entry = entries[0];
+  const entry = posts[0];
   const totalSteps = 4;
   const reflectionQuestions = 6;
+
+  if (loading) {
+    return (
+      <div className="max-w-[640px] mx-auto px-8 py-16">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!entry) {
+    return (
+      <div className="max-w-[640px] mx-auto px-8 py-16">
+        <p className="text-muted-foreground">No entries to review.</p>
+      </div>
+    );
+  }
+
+  const handlePublish = async () => {
+    setPublishing(true);
+    try {
+      await updatePostReview(
+        entry.id,
+        {
+          difficulty,
+          wentWell: accomplishment,
+          improve: blocker || different,
+          tomorrow: priorities.filter(Boolean).join("; "),
+        },
+        "published",
+      );
+    } catch (err) {
+      console.error("Failed to publish review:", err);
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   return (
     <div className="max-w-[640px] mx-auto px-8 py-16">
@@ -221,8 +259,12 @@ function ReviewPage() {
             )}
           </div>
           <div className="flex gap-3">
-            <button className="flex-1 bg-primary text-primary-foreground rounded-lg py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors">
-              Publish
+            <button
+              onClick={handlePublish}
+              disabled={publishing}
+              className="flex-1 bg-primary text-primary-foreground rounded-lg py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {publishing ? "Publishing..." : "Publish"}
             </button>
             <button className="flex-1 bg-secondary text-secondary-foreground rounded-lg py-2.5 text-sm font-medium hover:bg-secondary/80 transition-colors">
               I'll check later

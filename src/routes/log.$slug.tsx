@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { entries } from "@/data/mock-data";
+import { usePost, usePosts, type Post } from "@/hooks/use-posts";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ExternalLink, X } from "lucide-react";
 import { useState } from "react";
 
@@ -9,12 +9,18 @@ export const Route = createFileRoute("/log/$slug")({
 
 function LogEntry() {
   const { slug } = Route.useParams();
-  const entry = entries.find((e) => e.slug === slug);
-  const entryIndex = entries.findIndex((e) => e.slug === slug);
-  const prevEntry = entries[entryIndex + 1];
-  const nextEntry = entries[entryIndex - 1];
+  const { post, loading } = usePost(slug);
+  const { posts } = usePosts();
 
-  if (!entry) {
+  if (loading) {
+    return (
+      <div className="max-w-[1100px] mx-auto px-8 py-10">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!post) {
     return (
       <div className="max-w-[1100px] mx-auto px-8 py-10">
         <p className="text-muted-foreground">Entry not found.</p>
@@ -23,30 +29,32 @@ function LogEntry() {
     );
   }
 
+  const entryIndex = posts.findIndex((p) => p.dateRaw === slug);
+  const prevEntry = posts[entryIndex + 1];
+  const nextEntry = posts[entryIndex - 1];
+
   return (
     <div className="max-w-[1100px] mx-auto px-8 py-10">
       <div className="flex items-center gap-3 mb-6">
         <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors text-sm">Dashboard</Link>
         <span className="text-muted-foreground">/</span>
-        <span className="text-sm font-medium text-foreground">{entry.date}</span>
+        <span className="text-sm font-medium text-foreground">{post.date}</span>
       </div>
 
       <div className="flex gap-8">
-        {/* Left Column */}
         <div className="flex-1 min-w-0" style={{ maxWidth: "65%" }}>
-          <GistCard entry={entry} />
-          <DevlogBody entry={entry} />
+          <GistCard post={post} />
+          <DevlogBody post={post} />
         </div>
 
-        {/* Right Column - Sticky */}
         <div className="w-[320px] shrink-0">
           <div className="sticky top-8 flex flex-col gap-4">
-            <ScoreCard entry={entry} />
-            <StatsCard entry={entry} />
-            <TasksCard entry={entry} />
-            <SelfAssessmentCard entry={entry} />
+            <ScoreCard post={post} />
+            <StatsCard post={post} />
+            <TasksCard post={post} />
+            <SelfAssessmentCard post={post} />
             <HeroImageCard />
-            <TagsCard entry={entry} />
+            <TagsCard post={post} />
             <NavCard prevEntry={prevEntry} nextEntry={nextEntry} />
           </div>
         </div>
@@ -55,7 +63,7 @@ function LogEntry() {
   );
 }
 
-function GistCard({ entry }: { entry: (typeof entries)[0] }) {
+function GistCard({ post }: { post: Post }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -67,13 +75,14 @@ function GistCard({ entry }: { entry: (typeof entries)[0] }) {
         <h2 className="text-sm font-semibold font-display text-foreground">The gist</h2>
         {expanded ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
       </button>
-      <p className="text-sm text-muted-foreground mt-2">• {entry.gistBullets[0]}</p>
+      {post.gistBullets.length > 0 && (
+        <p className="text-sm text-muted-foreground mt-2">• {post.gistBullets[0]}</p>
+      )}
       {expanded && (
         <div className="mt-2 space-y-1.5 animate-fade-in">
-          {entry.gistBullets.slice(1).map((b, i) => {
-            // Insert divider before the last bullet if it's a personal one
-            const isLastBullet = i === entry.gistBullets.length - 2;
-            const hasPersonalSection = entry.sections.some(s => s.category === "Personal");
+          {post.gistBullets.slice(1).map((b, i) => {
+            const isLastBullet = i === post.gistBullets.length - 2;
+            const hasPersonalSection = post.sections.some(s => s.category === "Personal");
             return (
               <div key={i}>
                 {isLastBullet && hasPersonalSection && (
@@ -84,15 +93,15 @@ function GistCard({ entry }: { entry: (typeof entries)[0] }) {
             );
           })}
           <hr className="border-amber-200 my-3" />
-          <p className="text-sm text-muted-foreground italic mt-3">{entry.reflection}</p>
+          <p className="text-sm text-muted-foreground italic mt-3">{post.reflection}</p>
         </div>
       )}
     </div>
   );
 }
 
-function DevlogBody({ entry }: { entry: (typeof entries)[0] }) {
-  const categories = ["All", ...new Set(entry.sections.map((s) => s.category))];
+function DevlogBody({ post }: { post: Post }) {
+  const categories = ["All", ...new Set(post.sections.map((s) => s.category))];
   const [activeFilters, setActiveFilters] = useState<string[]>(["All"]);
 
   const toggleFilter = (cat: string) => {
@@ -107,8 +116,8 @@ function DevlogBody({ entry }: { entry: (typeof entries)[0] }) {
   };
 
   const filteredSections = activeFilters.includes("All")
-    ? entry.sections
-    : entry.sections.filter((s) => activeFilters.includes(s.category));
+    ? post.sections
+    : post.sections.filter((s) => activeFilters.includes(s.category));
 
   return (
     <div>
@@ -166,19 +175,27 @@ function DevlogBody({ entry }: { entry: (typeof entries)[0] }) {
   );
 }
 
-function ScoreCard({ entry }: { entry: (typeof entries)[0] }) {
-  const breakdowns = [
-    { label: "Tasks", value: 80 },
-    { label: "Hours", value: 65 },
-    { label: "Notes", value: 70 },
-    { label: "Variety", value: 60 },
-    { label: "Photos", value: 50 },
-  ];
+function ScoreCard({ post }: { post: Post }) {
+  const breakdowns = post.scoreBreakdown
+    ? [
+        { label: "Tasks", value: post.scoreBreakdown.tasks },
+        { label: "Hours", value: post.scoreBreakdown.hours },
+        { label: "Notes", value: post.scoreBreakdown.notes },
+        { label: "Variety", value: post.scoreBreakdown.variety },
+        { label: "Photos", value: post.scoreBreakdown.photos },
+      ]
+    : [
+        { label: "Tasks", value: 80 },
+        { label: "Hours", value: 65 },
+        { label: "Notes", value: 70 },
+        { label: "Variety", value: 60 },
+        { label: "Photos", value: 50 },
+      ];
 
   return (
     <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
       <div className="text-center mb-4">
-        <span className="text-4xl font-extrabold font-display text-primary">{entry.founderScore}</span>
+        <span className="text-4xl font-extrabold font-display text-primary">{post.founderScore}</span>
         <p className="text-xs font-medium text-primary mt-0.5">Founder Score</p>
       </div>
       <div className="space-y-2">
@@ -196,37 +213,37 @@ function ScoreCard({ entry }: { entry: (typeof entries)[0] }) {
   );
 }
 
-function StatsCard({ entry }: { entry: (typeof entries)[0] }) {
+function StatsCard({ post }: { post: Post }) {
   return (
     <div className="bg-card rounded-xl border border-border p-5 shadow-sm flex items-center justify-around">
       <div className="text-center">
-        <span className="text-2xl font-bold font-display text-foreground">{entry.hours}</span>
+        <span className="text-2xl font-bold font-display text-foreground">{post.hours}</span>
         <p className="text-[11px] text-muted-foreground">Hours</p>
       </div>
       <div className="w-px h-8 bg-border" />
       <div className="text-center">
-        <span className="text-2xl font-bold font-display text-foreground">{entry.impact}/10</span>
+        <span className="text-2xl font-bold font-display text-foreground">{post.impact}/10</span>
         <p className="text-[11px] text-muted-foreground">Impact</p>
       </div>
     </div>
   );
 }
 
-function TasksCard({ entry }: { entry: (typeof entries)[0] }) {
+function TasksCard({ post }: { post: Post }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
     <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
       <button onClick={() => setExpanded(!expanded)} className="flex items-center justify-between w-full text-left">
-        <span className="text-sm font-semibold font-display text-foreground">Tasks: {entry.tasksCompleted}</span>
+        <span className="text-sm font-semibold font-display text-foreground">Tasks: {post.tasksCompleted}</span>
         {expanded ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
       </button>
       {expanded && (
         <div className="mt-3 space-y-1.5">
-          {entry.tasks.map((t) => (
+          {post.tasks.map((t) => (
             <div key={t.id} className="flex items-center gap-2 text-sm">
               <span className="text-green-600">✓</span>
-              <span className="font-mono text-[11px] text-muted-foreground">{t.id}</span>
+              <span className="font-mono text-[11px] text-muted-foreground">{t.externalId}</span>
               <span className="text-foreground/80 text-xs">{t.name}</span>
             </div>
           ))}
@@ -236,15 +253,15 @@ function TasksCard({ entry }: { entry: (typeof entries)[0] }) {
   );
 }
 
-function SelfAssessmentCard({ entry }: { entry: (typeof entries)[0] }) {
+function SelfAssessmentCard({ post }: { post: Post }) {
   return (
     <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
       <h3 className="text-xs font-semibold font-display text-muted-foreground uppercase tracking-wider mb-3">Self-assessment</h3>
       <div className="space-y-2 text-sm">
-        <div><span className="text-muted-foreground">How hard:</span> <span className="font-medium">{entry.selfAssessment.difficulty}/10</span></div>
-        <div><span className="text-muted-foreground">Went well:</span> <span className="font-medium">{entry.selfAssessment.wentWell}</span></div>
-        <div><span className="text-muted-foreground">Improve:</span> <span className="font-medium">{entry.selfAssessment.improve}</span></div>
-        <div><span className="text-muted-foreground">Tomorrow:</span> <span className="font-medium">{entry.selfAssessment.tomorrow}</span></div>
+        <div><span className="text-muted-foreground">How hard:</span> <span className="font-medium">{post.selfAssessment.difficulty}/10</span></div>
+        <div><span className="text-muted-foreground">Went well:</span> <span className="font-medium">{post.selfAssessment.wentWell}</span></div>
+        <div><span className="text-muted-foreground">Improve:</span> <span className="font-medium">{post.selfAssessment.improve}</span></div>
+        <div><span className="text-muted-foreground">Tomorrow:</span> <span className="font-medium">{post.selfAssessment.tomorrow}</span></div>
       </div>
     </div>
   );
@@ -288,10 +305,10 @@ function HeroImageCard() {
   );
 }
 
-function TagsCard({ entry }: { entry: (typeof entries)[0] }) {
+function TagsCard({ post }: { post: Post }) {
   return (
     <div className="flex flex-wrap gap-1.5">
-      {entry.tags.map((tag) => (
+      {post.tags.map((tag) => (
         <span key={tag} className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
           {tag}
         </span>
@@ -300,17 +317,17 @@ function TagsCard({ entry }: { entry: (typeof entries)[0] }) {
   );
 }
 
-function NavCard({ prevEntry, nextEntry }: { prevEntry?: (typeof entries)[0]; nextEntry?: (typeof entries)[0] }) {
+function NavCard({ prevEntry, nextEntry }: { prevEntry?: Post; nextEntry?: Post }) {
   return (
     <div className="flex items-center justify-between">
       {prevEntry ? (
-        <Link to="/log/$slug" params={{ slug: prevEntry.slug }} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <Link to="/log/$slug" params={{ slug: prevEntry.dateRaw }} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ChevronLeft size={14} />
           {prevEntry.date.split(", ")[1]}
         </Link>
       ) : <span />}
       {nextEntry ? (
-        <Link to="/log/$slug" params={{ slug: nextEntry.slug }} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <Link to="/log/$slug" params={{ slug: nextEntry.dateRaw }} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
           {nextEntry.date.split(", ")[1]}
           <ChevronRight size={14} />
         </Link>

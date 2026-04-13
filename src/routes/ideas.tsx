@@ -1,23 +1,57 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ideas } from "@/data/mock-data";
+import { useIdeas } from "@/hooks/use-ideas";
 import { Lock, Globe, Plus } from "lucide-react";
 import { useState } from "react";
+import { format, parseISO } from "date-fns";
 
 export const Route = createFileRoute("/ideas")({
   component: IdeasPage,
 });
 
+function formatIdeaDate(dateStr: string): string {
+  try {
+    return format(parseISO(dateStr), "MMMM d");
+  } catch {
+    return dateStr;
+  }
+}
+
 function IdeasPage() {
+  const { ideas, loading, addIdea } = useIdeas();
   const [tab, setTab] = useState<"all" | "public">("all");
   const [newIdea, setNewIdea] = useState("");
+  const [adding, setAdding] = useState(false);
 
   const filtered = tab === "public" ? ideas.filter((i) => i.isPublic) : ideas;
 
   const grouped = filtered.reduce<Record<string, typeof ideas>>((acc, idea) => {
-    if (!acc[idea.date]) acc[idea.date] = [];
-    acc[idea.date].push(idea);
+    const display = formatIdeaDate(idea.date);
+    if (!acc[display]) acc[display] = [];
+    acc[display].push(idea);
     return acc;
   }, {});
+
+  const handleAdd = async () => {
+    const text = newIdea.trim();
+    if (!text || adding) return;
+    setAdding(true);
+    try {
+      await addIdea(text);
+      setNewIdea("");
+    } catch (err) {
+      console.error("Failed to add idea:", err);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-[1100px] mx-auto px-8 py-10">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1100px] mx-auto px-8 py-10">
@@ -49,12 +83,17 @@ function IdeasPage() {
           type="text"
           value={newIdea}
           onChange={(e) => setNewIdea(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
           placeholder="Jot down an idea..."
           className="flex-1 border border-input rounded-lg px-3 py-2.5 text-sm bg-card focus:outline-none focus:ring-2 focus:ring-ring"
         />
-        <button className="bg-primary text-primary-foreground rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors flex items-center gap-1.5">
+        <button
+          onClick={handleAdd}
+          disabled={adding || !newIdea.trim()}
+          className="bg-primary text-primary-foreground rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+        >
           <Plus size={16} />
-          Add
+          {adding ? "Adding..." : "Add"}
         </button>
       </div>
 

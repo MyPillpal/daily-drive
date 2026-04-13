@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Flame, Clock, CheckSquare, TrendingUp, Camera } from "lucide-react";
-import { entries, generateHeatmapData, generateTrendData } from "@/data/mock-data";
+import { usePosts } from "@/hooks/use-posts";
+import { useDailyStats } from "@/hooks/use-daily-stats";
 import { Area, AreaChart, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 import { useState, useMemo } from "react";
 
@@ -16,8 +17,31 @@ function ScoreBadgeColor(score: number) {
 }
 
 function Dashboard() {
-  const heatmapData = useMemo(() => generateHeatmapData(), []);
-  const trendData = useMemo(() => generateTrendData(), []);
+  const { posts, loading: postsLoading } = usePosts();
+  const { stats, loading: statsLoading } = useDailyStats();
+
+  const latestPost = posts[0];
+  const heatmapData = useMemo(
+    () => stats.map((s) => ({ date: s.date, score: s.score })),
+    [stats],
+  );
+
+  const trendData = useMemo(() => {
+    const recent = stats.slice(-31);
+    return recent.map((s, i) => ({ day: i + 1, score: s.score }));
+  }, [stats]);
+
+  const weekTasks = useMemo(() => {
+    return posts.slice(0, 7).reduce((sum, p) => sum + p.tasksCompleted, 0);
+  }, [posts]);
+
+  if (postsLoading || statsLoading) {
+    return (
+      <div className="max-w-[1100px] mx-auto px-8 py-10">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1100px] mx-auto px-8 py-10">
@@ -25,73 +49,75 @@ function Dashboard() {
 
       {/* Hero Stats */}
       <div className="grid grid-cols-4 gap-4 mb-10">
-        {/* Founder Score - 2x taller with amber gradient */}
         <div className="row-span-1 rounded-xl border border-amber-200 p-6 shadow-sm flex flex-col items-center justify-center text-center animate-scale-in"
              style={{
                background: "linear-gradient(135deg, oklch(0.98 0.03 70), oklch(0.94 0.07 60), oklch(0.96 0.04 80))",
                minHeight: "180px",
              }}>
-          <span className="font-extrabold font-display text-primary leading-none" style={{ fontSize: "72px" }}>72</span>
+          <span className="font-extrabold font-display text-primary leading-none" style={{ fontSize: "72px" }}>{latestPost?.founderScore ?? "—"}</span>
           <span className="text-sm font-semibold text-primary mt-2">Founder Score</span>
-          <span className="text-xs text-amber-700 mt-0.5 font-medium">Strong day.</span>
+          <span className="text-xs text-amber-700 mt-0.5 font-medium">
+            {latestPost && latestPost.founderScore >= 70 ? "Strong day." : latestPost ? "Keep pushing." : ""}
+          </span>
         </div>
         <div className="bg-card rounded-xl border border-border p-6 shadow-sm flex flex-col items-center text-center animate-fade-in" style={{ animationDelay: "80ms", animationFillMode: "both" }}>
           <div className="flex items-center gap-2">
             <Flame className="text-primary animate-pulse" size={28} />
-            <span className="text-4xl font-bold font-display text-foreground">14</span>
+            <span className="text-4xl font-bold font-display text-foreground">{posts.length}</span>
           </div>
           <span className="text-sm font-medium text-muted-foreground mt-1">Day streak</span>
         </div>
         <div className="bg-card rounded-xl border border-border p-6 shadow-sm flex flex-col items-center text-center animate-fade-in" style={{ animationDelay: "160ms", animationFillMode: "both" }}>
           <div className="flex items-center gap-1">
             <Clock className="text-muted-foreground" size={20} />
-            <span className="text-4xl font-bold font-display text-foreground">6.5</span>
+            <span className="text-4xl font-bold font-display text-foreground">{latestPost?.hours ?? 0}</span>
           </div>
           <span className="text-sm font-medium text-muted-foreground mt-1">Hours today</span>
         </div>
         <div className="bg-card rounded-xl border border-border p-6 shadow-sm flex flex-col items-center text-center animate-fade-in" style={{ animationDelay: "240ms", animationFillMode: "both" }}>
           <div className="flex items-center gap-1">
             <CheckSquare className="text-muted-foreground" size={20} />
-            <span className="text-4xl font-bold font-display text-foreground">23</span>
+            <span className="text-4xl font-bold font-display text-foreground">{weekTasks}</span>
           </div>
           <span className="text-sm font-medium text-muted-foreground mt-1">Tasks this week</span>
         </div>
       </div>
 
       {/* Activity Heatmap */}
-      <div className="bg-card rounded-xl border border-border p-6 shadow-sm mb-10 animate-fade-in" style={{ animationDelay: "300ms", animationFillMode: "both" }}>
-        <h2 className="text-sm font-semibold font-display text-foreground mb-4">Activity</h2>
-        <ActivityHeatmap data={heatmapData} />
-      </div>
+      {heatmapData.length > 0 && (
+        <div className="bg-card rounded-xl border border-border p-6 shadow-sm mb-10 animate-fade-in" style={{ animationDelay: "300ms", animationFillMode: "both" }}>
+          <h2 className="text-sm font-semibold font-display text-foreground mb-4">Activity</h2>
+          <ActivityHeatmap data={heatmapData} />
+        </div>
+      )}
 
       {/* Recent Entries */}
       <h2 className="text-sm font-semibold font-display text-foreground mb-4">Recent entries</h2>
       <div className="grid grid-cols-2 gap-4 mb-10">
-        {entries.slice(0, 6).map((entry, i) => (
+        {posts.slice(0, 6).map((post, i) => (
           <Link
-            key={entry.slug}
+            key={post.dateRaw}
             to="/log/$slug"
-            params={{ slug: entry.slug }}
+            params={{ slug: post.dateRaw }}
             className="bg-card rounded-xl border border-border p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group animate-fade-in"
             style={{ animationDelay: `${350 + i * 60}ms`, animationFillMode: "both" }}
           >
             <div className="flex items-start justify-between mb-3">
-              <span className="text-sm font-medium text-foreground">{entry.date}</span>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${ScoreBadgeColor(entry.founderScore)}`}>
-                {entry.founderScore}
+              <span className="text-sm font-medium text-foreground">{post.date}</span>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${ScoreBadgeColor(post.founderScore)}`}>
+                {post.founderScore}
               </span>
             </div>
-            {/* Hero image placeholder */}
             <div className="w-full h-24 rounded-lg bg-muted flex items-center justify-center mb-3">
               <Camera size={24} className="text-muted-foreground" />
             </div>
             <div className="flex items-center gap-4 mb-2">
-              <span className="text-lg font-bold font-display text-foreground">{entry.hours} hrs</span>
-              <span className="text-sm text-muted-foreground">Impact {entry.impact}/10</span>
+              <span className="text-lg font-bold font-display text-foreground">{post.hours} hrs</span>
+              <span className="text-sm text-muted-foreground">Impact {post.impact}/10</span>
             </div>
-            <p className="text-sm text-muted-foreground mb-3 line-clamp-1">{entry.preview}</p>
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-1">{post.preview}</p>
             <div className="flex flex-wrap gap-1.5">
-              {entry.tags.map((tag) => (
+              {post.tags.map((tag) => (
                 <span key={tag} className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
                   {tag}
                 </span>
@@ -102,35 +128,37 @@ function Dashboard() {
       </div>
 
       {/* 30-day Trend */}
-      <div className="bg-card rounded-xl border border-border p-6 shadow-sm animate-fade-in" style={{ animationDelay: "600ms", animationFillMode: "both" }}>
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp size={16} className="text-muted-foreground" />
-          <h2 className="text-sm font-semibold font-display text-foreground">30-day Founder Score</h2>
+      {trendData.length > 0 && (
+        <div className="bg-card rounded-xl border border-border p-6 shadow-sm animate-fade-in" style={{ animationDelay: "600ms", animationFillMode: "both" }}>
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp size={16} className="text-muted-foreground" />
+            <h2 className="text-sm font-semibold font-display text-foreground">30-day Founder Score</h2>
+          </div>
+          <div className="h-32">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={trendData}>
+                <defs>
+                  <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="oklch(0.75 0.16 55)" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="oklch(0.75 0.16 55)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <RechartsTooltip
+                  contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid oklch(0.92 0.005 80)" }}
+                  labelFormatter={(v) => `Day ${v}`}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="score"
+                  stroke="oklch(0.75 0.16 55)"
+                  strokeWidth={2}
+                  fill="url(#scoreGrad)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-        <div className="h-32">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={trendData}>
-              <defs>
-                <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="oklch(0.75 0.16 55)" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="oklch(0.75 0.16 55)" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <RechartsTooltip
-                contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid oklch(0.92 0.005 80)" }}
-                labelFormatter={(v) => `Day ${v}`}
-              />
-              <Area
-                type="monotone"
-                dataKey="score"
-                stroke="oklch(0.75 0.16 55)"
-                strokeWidth={2}
-                fill="url(#scoreGrad)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -154,7 +182,6 @@ function ActivityHeatmap({ data }: { data: { date: string; score: number }[] }) 
     return grid;
   }, [data]);
 
-  // Month labels
   const monthLabels = useMemo(() => {
     const labels: { label: string; weekIndex: number }[] = [];
     let lastMonth = -1;
@@ -188,7 +215,6 @@ function ActivityHeatmap({ data }: { data: { date: string; score: number }[] }) 
   return (
     <div className="relative overflow-x-auto">
       <div className="flex">
-        {/* Day-of-week labels */}
         <div className="flex flex-col gap-[3px] mr-2 pt-[18px]">
           {dayLabels.map((l, i) => (
             <div key={i} className="h-[13px] flex items-center">
@@ -198,7 +224,6 @@ function ActivityHeatmap({ data }: { data: { date: string; score: number }[] }) 
         </div>
 
         <div className="flex-1">
-          {/* Month labels */}
           <div className="flex h-[18px] mb-[2px]" style={{ position: "relative" }}>
             {monthLabels.map((m, i) => (
               <span
@@ -211,7 +236,6 @@ function ActivityHeatmap({ data }: { data: { date: string; score: number }[] }) 
             ))}
           </div>
 
-          {/* Grid */}
           <div className="flex gap-[3px]">
             {weeks.map((week, wi) => (
               <div key={wi} className="flex flex-col gap-[3px]">
