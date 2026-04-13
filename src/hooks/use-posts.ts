@@ -146,22 +146,11 @@ export function usePost(dateSlug: string) {
     let cancelled = false;
 
     async function fetch() {
-      // Try date_raw first, then date
-      let { data, error: err } = await supabase
+      const { data, error: err } = await supabase
         .from("posts")
         .select("*")
-        .eq("date_raw", dateSlug)
+        .eq("date", dateSlug)
         .maybeSingle();
-
-      if (!data && !err) {
-        const res = await supabase
-          .from("posts")
-          .select("*")
-          .eq("date", dateSlug)
-          .maybeSingle();
-        data = res.data;
-        err = res.error;
-      }
 
       if (cancelled) return;
 
