@@ -53,13 +53,16 @@ export interface Post {
 }
 
 function mapRow(row: any): Post {
+  const parentSummary = row.parent_summary;
+  const devlogSections = row.devlog_sections ?? row.sections ?? [];
+
   return {
     id: row.id,
-    dateRaw: row.date_raw ?? row.date ?? "",
+    dateRaw: row.date ?? "",
     date: row.date_display ?? row.date ?? "",
     dayOfWeek: row.day_of_week ?? "",
     founderScore: row.founder_score ?? 0,
-    hours: row.hours ?? 0,
+    hours: row.hours_logged ?? row.hours ?? 0,
     impact: row.impact ?? 0,
     tasksCompleted: row.tasks_completed ?? 0,
     preview: row.preview ?? "",
@@ -70,15 +73,15 @@ function mapRow(row: any): Post {
       name: t.name ?? "",
       completed: t.completed ?? false,
     })),
-    gistBullets: row.gist_bullets ?? [],
-    reflection: row.reflection ?? "",
-    sections: (row.sections ?? []).map((s: any) => ({
+    gistBullets: parentSummary?.bullets ?? row.gist_bullets ?? [],
+    reflection: parentSummary?.reflection ?? row.reflection ?? "",
+    sections: (Array.isArray(devlogSections) ? devlogSections : []).map((s: any) => ({
       category: s.category ?? "",
       title: s.title ?? "",
       hours: s.hours ?? 0,
       content: s.content ?? [],
-      taskRefs: s.task_refs ?? s.taskRefs ?? [],
-      nextSteps: s.next_steps ?? s.nextSteps ?? undefined,
+      taskRefs: s.taskRefs ?? s.task_refs ?? [],
+      nextSteps: s.nextSteps ?? s.next_steps ?? undefined,
     })),
     selfAssessment: row.self_assessment
       ? {
@@ -113,24 +116,12 @@ export function usePosts() {
       const { data, error: err } = await supabase
         .from("posts")
         .select("*")
-        .order("date_raw", { ascending: false });
+        .order("date", { ascending: false });
 
       if (cancelled) return;
 
       if (err) {
-        // Try alternate column name
-        const { data: data2, error: err2 } = await supabase
-          .from("posts")
-          .select("*")
-          .order("date", { ascending: false });
-
-        if (cancelled) return;
-        if (err2) {
-          setError(err2.message);
-          setLoading(false);
-          return;
-        }
-        setPosts((data2 ?? []).map(mapRow));
+        setError(err.message);
         setLoading(false);
         return;
       }
@@ -155,22 +146,11 @@ export function usePost(dateSlug: string) {
     let cancelled = false;
 
     async function fetch() {
-      // Try date_raw first, then date
-      let { data, error: err } = await supabase
+      const { data, error: err } = await supabase
         .from("posts")
         .select("*")
-        .eq("date_raw", dateSlug)
+        .eq("date", dateSlug)
         .maybeSingle();
-
-      if (!data && !err) {
-        const res = await supabase
-          .from("posts")
-          .select("*")
-          .eq("date", dateSlug)
-          .maybeSingle();
-        data = res.data;
-        err = res.error;
-      }
 
       if (cancelled) return;
 
