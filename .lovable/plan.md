@@ -1,48 +1,45 @@
 
 
-# Connect Supabase and Wire Real Data
+# Create AI Prompt Schema Reference (.md)
 
-## Current State
-- The app uses mock data from `src/data/mock-data.ts` in all hooks
-- `src/lib/supabase.ts` exists with a conditional client using `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars
-- `use-tasks.ts` already queries Supabase; the other hooks (`use-posts`, `use-ideas`, `use-daily-stats`) use mock data
-- Your Supabase project has tables: posts, tasks, ideas, daily_stats, daily_accomplishments, personal_notes, photos
+## Summary
+Write a comprehensive markdown file at `/mnt/documents/pillpod-ai-schema.md` that documents every table and JSONB field your external AI pipeline needs to produce. This is a reference doc for your AI prompt — no code changes needed.
 
-## How to Connect Supabase
+## What the file will cover
 
-Supabase isn't a standard connector — it's integrated through **Lovable Cloud**. You need to:
+### 1. `posts` table — the main output
+All columns with types, descriptions, and which are AI-generated vs computed vs user-filled. Includes full JSONB schemas for:
+- `parent_summary` (bullets + reflection)
+- `devlog_sections` (category-grouped work sections)
+- `tasks` (task reference array)
+- `score_breakdown` (founder score weights)
+- `self_assessment` (leave null — user fills via Review page)
+- `tags` (string array)
 
-1. Open the **Cloud** tab (database icon in the top nav bar, or Cmd+K → "Cloud")
-2. Click **Connect existing Supabase project**
-3. Enter your project URL (`https://frnwevdgvycgvlagnovf.supabase.co`) and provide the required credentials
+### 2. `daily_stats` table
+Columns: `date`, `score`/`founder_score`, `tasks_completed`, `hours_logged`, `areas_touched`. One row per day, can be derived from the same raw data.
 
-This will automatically inject the `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars and generate client files under `src/integrations/supabase/`.
+### 3. `ideas` table
+Columns: `text`, `date`, `is_public`, `tags`. If your pipeline extracts ideas from daily notes, document the insert format.
 
-**Once you've connected your Supabase project through the Cloud tab, tell me and I'll proceed with step 2 below.**
+### 4. `tasks` table
+Columns: `external_id`, `name`, `date`, `status`, `post_id`. Standalone table — tasks can be inserted separately or alongside posts.
 
-## What I'll Build After Connection
+### 5. Writing guidelines for the AI prompt
+- Bullet style guidance (outcome-led, include numbers/specifics)
+- Reflection tone (founder voice, what mattered, what's blocked)
+- Category naming conventions
+- When to include/omit `next_steps`
+- How to compute `founder_score` and its breakdown
 
-### Step 1: Update Supabase client
-- Switch `src/lib/supabase.ts` to use the auto-generated client from `src/integrations/supabase/` if available, or keep the current env-var approach
+### 6. Complete example
+A full JSON example for one day showing every field populated correctly.
 
-### Step 2: Rewrite hooks to query real tables
-Each hook will fetch from Supabase with a fallback to mock data if the client isn't configured:
+### 7. Insertion instructions
+REST API endpoint and JS client snippet for upserting rows.
 
-- **`use-posts.ts`** — Query `posts` table, joining related data (tasks, sections, score breakdowns). Map column names (snake_case → camelCase) to match the existing `Post` interface
-- **`use-daily-stats.ts`** — Query `daily_stats` table, map to `DailyStat` interface
-- **`use-ideas.ts`** — Query `ideas` table, map to `Idea` interface. Wire `addIdea` to do a real Supabase insert
-- **`use-tasks.ts`** — Already wired to Supabase; just ensure it handles the `supabaseConfigured` guard
-
-### Step 3: Handle data shape mapping
-- Map snake_case DB columns to camelCase TypeScript interfaces
-- Handle JSON columns (sections, gist_bullets, self_assessment, score_breakdown, tags) — parse if stored as JSONB
-- Gracefully fall back to mock data if Supabase is unconfigured or queries fail
-
-### Step 4: RLS consideration
-- Since this is a single-user prototype with no auth, tables likely need a permissive SELECT policy or public access. I'll add a note if queries return empty due to RLS.
-
-## Technical Details
-- No new dependencies needed (`@supabase/supabase-js` is already installed)
-- All existing component interfaces stay the same — only the data source changes
-- Loading and error states already exist in the UI
+## Technical details
+- Output file: `/mnt/documents/pillpod-ai-schema.md`
+- No code changes to the app
+- Schema derived directly from the hooks (`use-posts.ts`, `use-daily-stats.ts`, `use-ideas.ts`, `use-tasks.ts`) and the route components
 
