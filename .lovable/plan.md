@@ -1,49 +1,48 @@
 
 
-# PillPod Daily Log Prototype
+# Connect Supabase and Wire Real Data
 
-A multi-page daily log app for a startup founder — desktop-first, light mode only, all data mocked.
+## Current State
+- The app uses mock data from `src/data/mock-data.ts` in all hooks
+- `src/lib/supabase.ts` exists with a conditional client using `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars
+- `use-tasks.ts` already queries Supabase; the other hooks (`use-posts`, `use-ideas`, `use-daily-stats`) use mock data
+- Your Supabase project has tables: posts, tasks, ideas, daily_stats, daily_accomplishments, personal_notes, photos
 
-## Design System
-- Warm white background (#FAFAF9), cool gray text hierarchy, subtle warm gray borders
-- Amber/soft orange accent for Founder Score, streaks, heatmap, active states
-- Semantic colors: muted green (completed), soft red (blockers), blue (info)
-- Cards with soft shadows, 10-12px rounded corners, subtle hover lift
-- Geometric sans for headlines (Plus Jakarta Sans), readable sans for body (Inter), monospace for task IDs
-- Max content width ~1100px, generous whitespace
+## How to Connect Supabase
 
-## Pages
+Supabase isn't a standard connector — it's integrated through **Lovable Cloud**. You need to:
 
-### 1. Dashboard (`/`)
-- Hero stats bar: Founder Score (72, amber, large), Streak (14 days + flame), Hours (6.5), Tasks this week (23)
-- GitHub-style activity heatmap (52×7 grid, amber intensity shades, tooltips on hover)
-- 6 recent entry cards in 2-col grid with date, score badge, hours, impact, preview text, tag pills, hover lift
-- 30-day Founder Score sparkline/area chart at bottom
+1. Open the **Cloud** tab (database icon in the top nav bar, or Cmd+K → "Cloud")
+2. Click **Connect existing Supabase project**
+3. Enter your project URL (`https://frnwevdgvycgvlagnovf.supabase.co`) and provide the required credentials
 
-### 2. Daily Log Entry (`/log/april-7`)
-- Two-column layout (65/35)
-- Left: Collapsible "The gist" card with bullets + reflection, then devlog body with section filter pills (All/Hardware/Software/Business/Personal), section headers, inline task pills (PILL-247), time stats, next-steps callouts
-- Right (sticky): Founder Score breakdown bars, hours, impact, tasks list, self-assessment card, hero image + thumbnails with lightbox, tags, day navigation arrows
+This will automatically inject the `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars and generate client files under `src/integrations/supabase/`.
 
-### 3. Nightly Review (`/review`)
-- Step-through flow with progress dots
-- Step 1: Devlog preview with "Looks good" / "Edit" buttons
-- Step 2: Reflection questions one at a time (sliders for difficulty/impact, text inputs for accomplishments/blockers/tomorrow)
-- Step 3: Photo grid with hero selection
-- Step 4: Summary preview with "Publish" / "I'll check later"
+**Once you've connected your Supabase project through the Cloud tab, tell me and I'll proceed with step 2 below.**
 
-### 4. Ideas (`/ideas`)
-- Tabs: All ideas / Public only
-- Add idea input at top
-- 15-20 idea cards grouped by date with text, date, public/private badge, tags
+## What I'll Build After Connection
 
-### 5. Settings (`/settings`)
-- Empty placeholder page
+### Step 1: Update Supabase client
+- Switch `src/lib/supabase.ts` to use the auto-generated client from `src/integrations/supabase/` if available, or keep the current env-var approach
 
-## Sidebar Navigation
-- Persistent slim left sidebar with icons + labels: Dashboard, Daily Log, Ideas, Settings
-- Active page highlighted with amber accent
+### Step 2: Rewrite hooks to query real tables
+Each hook will fetch from Supabase with a fallback to mock data if the client isn't configured:
 
-## Data
-- Hardcoded mock data: 7-10 days of entries with realistic hardware startup content (ESP32, 3D printing, CAD, firmware), scores 25-88, hours 2-10, tags, task IDs like PILL-247
+- **`use-posts.ts`** — Query `posts` table, joining related data (tasks, sections, score breakdowns). Map column names (snake_case → camelCase) to match the existing `Post` interface
+- **`use-daily-stats.ts`** — Query `daily_stats` table, map to `DailyStat` interface
+- **`use-ideas.ts`** — Query `ideas` table, map to `Idea` interface. Wire `addIdea` to do a real Supabase insert
+- **`use-tasks.ts`** — Already wired to Supabase; just ensure it handles the `supabaseConfigured` guard
+
+### Step 3: Handle data shape mapping
+- Map snake_case DB columns to camelCase TypeScript interfaces
+- Handle JSON columns (sections, gist_bullets, self_assessment, score_breakdown, tags) — parse if stored as JSONB
+- Gracefully fall back to mock data if Supabase is unconfigured or queries fail
+
+### Step 4: RLS consideration
+- Since this is a single-user prototype with no auth, tables likely need a permissive SELECT policy or public access. I'll add a note if queries return empty due to RLS.
+
+## Technical Details
+- No new dependencies needed (`@supabase/supabase-js` is already installed)
+- All existing component interfaces stay the same — only the data source changes
+- Loading and error states already exist in the UI
 
