@@ -64,38 +64,29 @@ function LogEntry() {
 }
 
 function GistCard({ post }: { post: Post }) {
-  const [expanded, setExpanded] = useState(false);
-
   return (
     <div className="bg-amber-50 rounded-xl border border-amber-200 p-5 mb-6">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex items-center justify-between w-full text-left"
-      >
-        <h2 className="text-sm font-semibold font-display text-foreground">The gist</h2>
-        {expanded ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
-      </button>
-      {post.gistBullets.length > 0 && (
-        <p className="text-sm text-muted-foreground mt-2">• {post.gistBullets[0]}</p>
-      )}
-      {expanded && (
-        <div className="mt-2 space-y-1.5 animate-fade-in">
-          {post.gistBullets.slice(1).map((b, i) => {
-            const isLastBullet = i === post.gistBullets.length - 2;
-            const hasPersonalSection = post.sections.some(s => s.category === "Personal");
-            return (
-              <div key={i}>
-                {isLastBullet && hasPersonalSection && (
-                  <hr className="border-amber-200 my-3" />
-                )}
-                <p className="text-sm text-muted-foreground">• {b}</p>
-              </div>
-            );
-          })}
-          <hr className="border-amber-200 my-3" />
-          <p className="text-sm text-muted-foreground italic mt-3">{post.reflection}</p>
-        </div>
-      )}
+      <h2 className="text-sm font-semibold font-display text-foreground mb-2">The gist</h2>
+      <div className="space-y-1.5">
+        {post.gistBullets.map((b, i) => {
+          const hasPersonalSection = post.sections.some(s => s.category === "Personal");
+          const isLastBullet = i === post.gistBullets.length - 1;
+          return (
+            <div key={i}>
+              {isLastBullet && hasPersonalSection && (
+                <hr className="border-amber-200 my-3" />
+              )}
+              <p className="text-sm text-muted-foreground">• {b}</p>
+            </div>
+          );
+        })}
+        {post.reflection && (
+          <>
+            <hr className="border-amber-200 my-3" />
+            <p className="text-sm text-muted-foreground italic">{post.reflection}</p>
+          </>
+        )}
+      </div>
     </div>
   );
 }
