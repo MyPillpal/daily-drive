@@ -116,24 +116,12 @@ export function usePosts() {
       const { data, error: err } = await supabase
         .from("posts")
         .select("*")
-        .order("date_raw", { ascending: false });
+        .order("date", { ascending: false });
 
       if (cancelled) return;
 
       if (err) {
-        // Try alternate column name
-        const { data: data2, error: err2 } = await supabase
-          .from("posts")
-          .select("*")
-          .order("date", { ascending: false });
-
-        if (cancelled) return;
-        if (err2) {
-          setError(err2.message);
-          setLoading(false);
-          return;
-        }
-        setPosts((data2 ?? []).map(mapRow));
+        setError(err.message);
         setLoading(false);
         return;
       }
