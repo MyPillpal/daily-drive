@@ -49,11 +49,11 @@ function LogEntry() {
 
         <div className="w-[320px] shrink-0">
           <div className="sticky top-8 flex flex-col gap-4">
+            <HeroImageCard />
             <ScoreCard post={post} />
             <StatsCard post={post} />
             <TasksCard post={post} />
             <SelfAssessmentCard post={post} />
-            <HeroImageCard />
             <TagsCard post={post} />
             <NavCard prevEntry={prevEntry} nextEntry={nextEntry} />
           </div>
