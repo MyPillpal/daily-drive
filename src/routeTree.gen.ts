@@ -14,6 +14,7 @@ import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as LogRouteImport } from './routes/log'
 import { Route as IdeasRouteImport } from './routes/ideas'
+import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LogIndexRouteImport } from './routes/log.index'
 import { Route as ReviewsWeeklyRouteImport } from './routes/reviews/weekly'
@@ -45,6 +46,11 @@ const IdeasRoute = IdeasRouteImport.update({
   path: '/ideas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ExpensesRoute = ExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -73,6 +79,7 @@ const LogSlugRoute = LogSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/expenses': typeof ExpensesRoute
   '/ideas': typeof IdeasRoute
   '/log': typeof LogRouteWithChildren
   '/review': typeof ReviewRoute
@@ -85,6 +92,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/expenses': typeof ExpensesRoute
   '/ideas': typeof IdeasRoute
   '/review': typeof ReviewRoute
   '/reviews': typeof ReviewsRouteWithChildren
@@ -97,6 +105,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/expenses': typeof ExpensesRoute
   '/ideas': typeof IdeasRoute
   '/log': typeof LogRouteWithChildren
   '/review': typeof ReviewRoute
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/expenses'
     | '/ideas'
     | '/log'
     | '/review'
@@ -123,6 +133,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/expenses'
     | '/ideas'
     | '/review'
     | '/reviews'
@@ -134,6 +145,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/expenses'
     | '/ideas'
     | '/log'
     | '/review'
@@ -147,6 +159,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ExpensesRoute: typeof ExpensesRoute
   IdeasRoute: typeof IdeasRoute
   LogRoute: typeof LogRouteWithChildren
   ReviewRoute: typeof ReviewRoute
@@ -189,6 +202,13 @@ declare module '@tanstack/react-router' {
       path: '/ideas'
       fullPath: '/ideas'
       preLoaderRoute: typeof IdeasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/expenses': {
+      id: '/expenses'
+      path: '/expenses'
+      fullPath: '/expenses'
+      preLoaderRoute: typeof ExpensesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -256,6 +276,7 @@ const ReviewsRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ExpensesRoute: ExpensesRoute,
   IdeasRoute: IdeasRoute,
   LogRoute: LogRouteWithChildren,
   ReviewRoute: ReviewRoute,
