@@ -1,9 +1,11 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { BarChart3, PenLine, Lightbulb, Settings } from "lucide-react";
+import { BarChart3, PenLine, Lightbulb, Settings, CalendarDays, CalendarRange } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", to: "/", icon: BarChart3 },
   { label: "Daily Log", to: "/log", icon: PenLine },
+  { label: "Weekly", to: "/reviews/weekly", icon: CalendarDays },
+  { label: "Monthly", to: "/reviews/monthly", icon: CalendarRange },
   { label: "Ideas", to: "/ideas", icon: Lightbulb },
   { label: "Settings", to: "/settings", icon: Settings },
 ];
@@ -40,7 +42,7 @@ export function TopNav() {
               style={{ animationDelay: `${i * 50}ms`, animationFillMode: "both" }}
             >
               <item.icon size={16} strokeWidth={isActive ? 2.2 : 1.7} />
-              <span className="hidden md:inline">{item.label}</span>
+              <span className="hidden lg:inline">{item.label}</span>
               {isActive && (
                 <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-primary rounded-full" />
               )}

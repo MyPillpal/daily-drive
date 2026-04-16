@@ -10,16 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as LogRouteImport } from './routes/log'
 import { Route as IdeasRouteImport } from './routes/ideas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LogIndexRouteImport } from './routes/log.index'
+import { Route as ReviewsWeeklyRouteImport } from './routes/reviews/weekly'
+import { Route as ReviewsMonthlyRouteImport } from './routes/reviews/monthly'
 import { Route as LogSlugRouteImport } from './routes/log.$slug'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewsRoute = ReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReviewRoute = ReviewRouteImport.update({
@@ -47,6 +55,16 @@ const LogIndexRoute = LogIndexRouteImport.update({
   path: '/',
   getParentRoute: () => LogRoute,
 } as any)
+const ReviewsWeeklyRoute = ReviewsWeeklyRouteImport.update({
+  id: '/weekly',
+  path: '/weekly',
+  getParentRoute: () => ReviewsRoute,
+} as any)
+const ReviewsMonthlyRoute = ReviewsMonthlyRouteImport.update({
+  id: '/monthly',
+  path: '/monthly',
+  getParentRoute: () => ReviewsRoute,
+} as any)
 const LogSlugRoute = LogSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -58,16 +76,22 @@ export interface FileRoutesByFullPath {
   '/ideas': typeof IdeasRoute
   '/log': typeof LogRouteWithChildren
   '/review': typeof ReviewRoute
+  '/reviews': typeof ReviewsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/log/$slug': typeof LogSlugRoute
+  '/reviews/monthly': typeof ReviewsMonthlyRoute
+  '/reviews/weekly': typeof ReviewsWeeklyRoute
   '/log/': typeof LogIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ideas': typeof IdeasRoute
   '/review': typeof ReviewRoute
+  '/reviews': typeof ReviewsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/log/$slug': typeof LogSlugRoute
+  '/reviews/monthly': typeof ReviewsMonthlyRoute
+  '/reviews/weekly': typeof ReviewsWeeklyRoute
   '/log': typeof LogIndexRoute
 }
 export interface FileRoutesById {
@@ -76,8 +100,11 @@ export interface FileRoutesById {
   '/ideas': typeof IdeasRoute
   '/log': typeof LogRouteWithChildren
   '/review': typeof ReviewRoute
+  '/reviews': typeof ReviewsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/log/$slug': typeof LogSlugRoute
+  '/reviews/monthly': typeof ReviewsMonthlyRoute
+  '/reviews/weekly': typeof ReviewsWeeklyRoute
   '/log/': typeof LogIndexRoute
 }
 export interface FileRouteTypes {
@@ -87,19 +114,34 @@ export interface FileRouteTypes {
     | '/ideas'
     | '/log'
     | '/review'
+    | '/reviews'
     | '/settings'
     | '/log/$slug'
+    | '/reviews/monthly'
+    | '/reviews/weekly'
     | '/log/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ideas' | '/review' | '/settings' | '/log/$slug' | '/log'
+  to:
+    | '/'
+    | '/ideas'
+    | '/review'
+    | '/reviews'
+    | '/settings'
+    | '/log/$slug'
+    | '/reviews/monthly'
+    | '/reviews/weekly'
+    | '/log'
   id:
     | '__root__'
     | '/'
     | '/ideas'
     | '/log'
     | '/review'
+    | '/reviews'
     | '/settings'
     | '/log/$slug'
+    | '/reviews/monthly'
+    | '/reviews/weekly'
     | '/log/'
   fileRoutesById: FileRoutesById
 }
@@ -108,6 +150,7 @@ export interface RootRouteChildren {
   IdeasRoute: typeof IdeasRoute
   LogRoute: typeof LogRouteWithChildren
   ReviewRoute: typeof ReviewRoute
+  ReviewsRoute: typeof ReviewsRouteWithChildren
   SettingsRoute: typeof SettingsRoute
 }
 
@@ -118,6 +161,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reviews': {
+      id: '/reviews'
+      path: '/reviews'
+      fullPath: '/reviews'
+      preLoaderRoute: typeof ReviewsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/review': {
@@ -155,6 +205,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LogIndexRouteImport
       parentRoute: typeof LogRoute
     }
+    '/reviews/weekly': {
+      id: '/reviews/weekly'
+      path: '/weekly'
+      fullPath: '/reviews/weekly'
+      preLoaderRoute: typeof ReviewsWeeklyRouteImport
+      parentRoute: typeof ReviewsRoute
+    }
+    '/reviews/monthly': {
+      id: '/reviews/monthly'
+      path: '/monthly'
+      fullPath: '/reviews/monthly'
+      preLoaderRoute: typeof ReviewsMonthlyRouteImport
+      parentRoute: typeof ReviewsRoute
+    }
     '/log/$slug': {
       id: '/log/$slug'
       path: '/$slug'
@@ -177,11 +241,25 @@ const LogRouteChildren: LogRouteChildren = {
 
 const LogRouteWithChildren = LogRoute._addFileChildren(LogRouteChildren)
 
+interface ReviewsRouteChildren {
+  ReviewsMonthlyRoute: typeof ReviewsMonthlyRoute
+  ReviewsWeeklyRoute: typeof ReviewsWeeklyRoute
+}
+
+const ReviewsRouteChildren: ReviewsRouteChildren = {
+  ReviewsMonthlyRoute: ReviewsMonthlyRoute,
+  ReviewsWeeklyRoute: ReviewsWeeklyRoute,
+}
+
+const ReviewsRouteWithChildren =
+  ReviewsRoute._addFileChildren(ReviewsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   IdeasRoute: IdeasRoute,
   LogRoute: LogRouteWithChildren,
   ReviewRoute: ReviewRoute,
+  ReviewsRoute: ReviewsRouteWithChildren,
   SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport
