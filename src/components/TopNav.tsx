@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { BarChart3, PenLine, Lightbulb, Settings, CalendarDays, CalendarRange } from "lucide-react";
+import { BarChart3, PenLine, Lightbulb, DollarSign, Settings, CalendarDays, CalendarRange } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", to: "/", icon: BarChart3 },
@@ -7,6 +7,7 @@ const navItems = [
   { label: "Weekly", to: "/reviews/weekly", icon: CalendarDays },
   { label: "Monthly", to: "/reviews/monthly", icon: CalendarRange },
   { label: "Ideas", to: "/ideas", icon: Lightbulb },
+  { label: "Expenses", to: "/expenses", icon: DollarSign },
   { label: "Settings", to: "/settings", icon: Settings },
 ];
 
