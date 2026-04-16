@@ -19,6 +19,11 @@ dist-ssr
 # Environment variables
 .env
 
+# Claude export data
+claude-exports/
+.local/
+tmp/billing-scrape/
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
