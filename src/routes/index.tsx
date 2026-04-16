@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Flame, Clock, CheckSquare, TrendingUp, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
+import { Flame, Clock, CheckSquare, TrendingUp, ChevronDown, ChevronUp, ArrowRight, Sparkles } from "lucide-react";
 import { usePosts } from "@/hooks/use-posts";
 import { useDailyStats } from "@/hooks/use-daily-stats";
 import { useCountUp } from "@/hooks/use-count-up";
 import { RadialScore } from "@/components/RadialScore";
+import { AIChat } from "@/components/AIChat";
 import { Area, AreaChart, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 import { useState, useMemo } from "react";
 
@@ -44,6 +45,7 @@ function StatCard({ icon: Icon, value, label, delay }: { icon: typeof Flame; val
 }
 
 function Dashboard() {
+  const [chatOpen, setChatOpen] = useState(false);
   const { posts, loading: postsLoading } = usePosts();
   const { stats, loading: statsLoading } = useDailyStats();
 
@@ -212,6 +214,18 @@ function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* AI Chat FAB */}
+      {!chatOpen && (
+        <button
+          onClick={() => setChatOpen(true)}
+          className="fixed bottom-6 right-6 w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center z-40"
+        >
+          <Sparkles size={22} />
+        </button>
+      )}
+
+      <AIChat posts={posts} isOpen={chatOpen} onClose={() => setChatOpen(false)} />
     </div>
   );
 }
