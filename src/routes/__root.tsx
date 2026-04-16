@@ -1,5 +1,5 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-import { AppSidebar } from "@/components/AppSidebar";
+import { TopNav } from "@/components/TopNav";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -63,9 +63,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   return (
-    <div className="flex min-h-screen">
-      <AppSidebar />
-      <main className="flex-1 ml-16">
+    <div className="flex flex-col min-h-screen">
+      <TopNav />
+      <main className="flex-1 mt-14">
         <Outlet />
       </main>
     </div>
